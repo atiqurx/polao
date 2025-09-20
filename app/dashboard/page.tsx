@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ChatbotSidebar from "../components/ChatbotSidebar";
 import BiasDistribution from "@/components/BiasDistribution";
 
@@ -30,6 +31,59 @@ type BiasLabel = "LEFT" | "CENTER" | "RIGHT" | "Unknown";
 function headline(ev: EREvent) {
   return ev.title?.eng || Object.values(ev.title || {})[0] || "Untitled event";
 }
+interface Article {
+  title: string;
+  url: string;
+  dateTimePub: string;
+  image?: string;
+  bias?: string;
+  category?: string;
+}
+
+const categories = ["All", "Business", "Technology", "Science", "Health", "Sports", "Entertainment"];
+
+// Mock bias data for demonstration - in real app this would come from your bias analysis
+const getRandomBias = () => {
+  const biases = ["left", "center", "right"];
+  return biases[Math.floor(Math.random() * biases.length)];
+};
+
+const getBiasColor = (bias: string) => {
+  switch (bias) {
+    case "left":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "right":
+      return "bg-red-100 text-red-800 border-red-200";
+    case "center":
+      return "bg-green-100 text-green-800 border-green-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
+
+const getBiasLabel = (bias: string) => {
+  switch (bias) {
+    case "left":
+      return "Left-Leaning";
+    case "right":
+      return "Right-Leaning";
+    case "center":
+      return "Centrist";
+    default:
+      return "Unknown";
+  }
+};
+
+const formatTimeAgo = (publishedAt: string) => {
+  const now = new Date();
+  const published = new Date(publishedAt);
+  const diffInHours = Math.floor((now.getTime() - published.getTime()) / (1000 * 60 * 60));
+
+  if (diffInHours < 1) return "Just now";
+  if (diffInHours < 24) return `${diffInHours} hours ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays} days ago`;
+};
 
 function domainFromUrl(u: string) {
   try {
@@ -339,6 +393,10 @@ export default function Dashboard() {
   const [articles, setArticles] = useState<ERArticle[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
   const [errorArticles, setErrorArticles] = useState<string | null>(null);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
 
   async function loadEvents(page = 1) {
     setLoading(true);
@@ -401,6 +459,87 @@ export default function Dashboard() {
         .filter(Boolean),
     [events]
   );
+  useEffect(() => {
+    const fetchNews = async () => {
+      setLoading(true);
+      try {
+        let url = `/api/news?limit=20`;
+        if (selectedCategory !== "All") {
+          url += `&category=${selectedCategory.toLowerCase()}`;
+        }
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // Add mock bias data and category mapping
+        const articlesWithBias = (data.articles || []).map((article: Article) => ({
+          ...article,
+          bias: getRandomBias(),
+          category:
+            selectedCategory === "All"
+              ? categories[Math.floor(Math.random() * (categories.length - 1)) + 1]
+              : selectedCategory,
+        }));
+
+        setArticles(articlesWithBias);
+        setFilteredArticles(articlesWithBias);
+      } catch (err) {
+        console.error("Error fetching news:", err);
+        // Fallback to mock data if API fails
+        const mockArticles: Article[] = [
+          {
+            title: "Global Climate Summit Reaches Historic Agreement on Carbon Emissions",
+            description:
+              "World leaders have reached a landmark agreement to reduce carbon emissions by 50% by 2030, marking a significant step forward in climate action.",
+            source: "Reuters",
+            publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            url: "#",
+            image:
+              "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&h=400&fit=crop",
+            bias: "center",
+            category: "Science",
+          },
+          {
+            title: "Tech Giants Face New Regulations in European Union",
+            description:
+              "The European Union has announced new regulations targeting major technology companies, requiring greater transparency in data handling and algorithmic decision-making.",
+            source: "The Guardian",
+            publishedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+            url: "#",
+            image:
+              "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop",
+            bias: "left",
+            category: "Technology",
+          },
+          {
+            title: "Economic Growth Surges in Q3 Despite Market Volatility",
+            description:
+              "The economy shows strong growth in the third quarter, with GDP increasing by 3.2% despite ongoing market uncertainties and inflation concerns.",
+            source: "Wall Street Journal",
+            publishedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+            url: "#",
+            image:
+              "https://images.unsplash.com/photo-1611974789855-4e9042af2176?w=800&h=400&fit=crop",
+            bias: "right",
+            category: "Business",
+          },
+        ];
+        setArticles(mockArticles);
+        setFilteredArticles(mockArticles);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, [selectedCategory]);
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    if (category === "All") {
+      setFilteredArticles(articles);
+    } else {
+      setFilteredArticles(articles.filter((article) => article.category === category));
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
@@ -517,6 +656,171 @@ export default function Dashboard() {
                 </article>
               ))}
             </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center">
+              <h1 className="text-3xl font-bold text-gray-900">Polao Dashboard</h1>
+              <span className="ml-2 text-sm text-gray-500">News with Bias Analysis</span>
+            </div>
+            <div className="text-sm text-gray-500">
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation */}
+      <nav className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8 py-4 overflow-x-auto">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => handleCategoryChange(category)}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                  selectedCategory === category
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content with persistent right sidebar */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT: news feed */}
+          <section className="lg:col-span-8 xl:col-span-9">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                  <p className="text-gray-600">
+                    Loading {selectedCategory.toLowerCase()} news...
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Featured Story */}
+                {filteredArticles.length > 0 && (
+                  <div className="mb-12">
+                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                      <div className="md:flex">
+                        <div className="md:w-2/3">
+                          <img
+                            src={
+                              filteredArticles[0]?.image ||
+                              "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&h=400&fit=crop"
+                            }
+                            alt={filteredArticles[0]?.title}
+                            className="w-full h-64 md:h-80 object-cover"
+                          />
+                        </div>
+                        <div className="md:w-1/3 p-6 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center space-x-2 mb-3">
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-full border bias-indicator ${getBiasColor(
+                                  filteredArticles[0]?.bias || "center"
+                                )}`}
+                              >
+                                {getBiasLabel(filteredArticles[0]?.bias || "center")}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {filteredArticles[0]?.source}
+                              </span>
+                              <span className="text-sm text-gray-500">•</span>
+                              <span className="text-sm text-gray-500">
+                                {formatTimeAgo(
+                                  filteredArticles[0]?.publishedAt ||
+                                    new Date().toISOString()
+                                )}
+                              </span>
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
+                              {filteredArticles[0]?.title}
+                            </h2>
+                            <p className="text-gray-600 leading-relaxed">
+                              {filteredArticles[0]?.description}
+                            </p>
+                          </div>
+                          <div className="mt-4">
+                            <a
+                              href={filteredArticles[0]?.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              Read Full Story →
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* News Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredArticles.slice(1).map((article, idx) => (
+                    <article
+                      key={idx}
+                      className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md news-card"
+                    >
+                      <img
+                        src={
+                          article.image ||
+                          "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&h=400&fit=crop"
+                        }
+                        alt={article.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="p-6">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full border bias-indicator ${getBiasColor(
+                              article.bias || "center"
+                            )}`}
+                          >
+                            {getBiasLabel(article.bias || "center")}
+                          </span>
+                          <span className="text-sm text-gray-500">{article.source}</span>
+                          <span className="text-sm text-gray-500">•</span>
+                          <span className="text-sm text-gray-500">
+                            {formatTimeAgo(article.publishedAt)}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 leading-tight">
+                          {article.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                          {article.description}
+                        </p>
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                        >
+                          Read More →
+                        </a>
+                      </div>
+                    </article>
+                  ))}
+                </div>
 
             {/* Pagination */}
             <div className="mt-10 flex items-center justify-center gap-2">
@@ -600,6 +904,67 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+    </div>
+                {/* Load More Button */}
+                <div className="text-center mt-12">
+                  <button className="bg-gray-900 text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors">
+                    Load More Stories
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+
+          {/* RIGHT: persistent chatbot sidebar */}
+          <aside className="lg:col-span-4 xl:col-span-3">
+            <ChatbotSidebar mode="sidebar" />
+          </aside>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Polao Dashboard</h3>
+              <p className="text-gray-400 text-sm">
+                Real-time news analysis with transparent bias indicators for informed decision making.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Categories</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white">Business</a></li>
+                <li><a href="#" className="hover:text-white">Technology</a></li>
+                <li><a href="#" className="hover:text-white">Science</a></li>
+                <li><a href="#" className="hover:text-white">Health</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Analysis</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white">Bias Detection</a></li>
+                <li><a href="#" className="hover:text-white">Source Analysis</a></li>
+                <li><a href="#" className="hover:text-white">Trends</a></li>
+                <li><a href="#" className="hover:text-white">Reports</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Tools</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white">API Access</a></li>
+                <li><a href="#" className="hover:text-white">Data Export</a></li>
+                <li><a href="#" className="hover:text-white">Alerts</a></li>
+                <li><a href="#" className="hover:text-white">Settings</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+            <p>&copy; 2024 Polao. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
