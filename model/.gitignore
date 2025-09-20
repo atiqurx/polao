@@ -1,2 +1,4 @@
 bias-bert-model/
 bias-bert-model.tar.gz
+embeddings_full.pkl
+bias_classifier.pkl
