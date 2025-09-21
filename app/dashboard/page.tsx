@@ -3,8 +3,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import ChatbotSidebar from "../components/ChatbotSidebar";
 import BiasDistribution from "@/components/BiasDistribution";
 
@@ -28,73 +26,22 @@ type ERArticle = {
 
 type BiasLabel = "LEFT" | "CENTER" | "RIGHT" | "Unknown";
 
+/* ---------- Categories (UI only unless your API supports them) ---------- */
+const CATEGORIES = [
+  { key: "latest", label: "Latest" },
+  { key: "politics", label: "Politics" },
+  { key: "economy", label: "Economy" },
+  { key: "finance", label: "Finance" },
+  { key: "business", label: "Business" },
+  { key: "technology", label: "Technology" },
+  { key: "immigration", label: "Immigration" },
+  { key: "health", label: "Health" },
+  { key: "science", label: "Science" },
+  { key: "sports", label: "Sports" },
+  { key: "entertainment", label: "Entertainment" },
+];
+
 /* ---------- Helpers ---------- */
-function headline(ev: EREvent) {
-  return ev.title?.eng || Object.values(ev.title || {})[0] || "Untitled event";
-}
-interface Article {
-  title: string;
-  url: string;
-  dateTimePub: string;
-  image?: string;
-  bias?: string;
-  category?: string;
-}
-
-const categories = ["All", "Business", "Technology", "Science", "Health", "Sports", "Entertainment"];
-
-// Mock bias data for demonstration - in real app this would come from your bias analysis
-const getRandomBias = () => {
-  const biases = ["left", "center", "right"];
-  return biases[Math.floor(Math.random() * biases.length)];
-};
-
-const getBiasColor = (bias: string) => {
-  switch (bias) {
-    case "left":
-      return "bg-blue-100 text-blue-800 border-blue-200";
-    case "right":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "center":
-      return "bg-green-100 text-green-800 border-green-200";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
-  }
-};
-
-const getBiasLabel = (bias: string) => {
-  switch (bias) {
-    case "left":
-      return "Left-Leaning";
-    case "right":
-      return "Right-Leaning";
-    case "center":
-      return "Centrist";
-    default:
-      return "Unknown";
-  }
-};
-
-const formatTimeAgo = (publishedAt: string) => {
-  const now = new Date();
-  const published = new Date(publishedAt);
-  const diffInHours = Math.floor((now.getTime() - published.getTime()) / (1000 * 60 * 60));
-
-  if (diffInHours < 1) return "Just now";
-  if (diffInHours < 24) return `${diffInHours} hours ago`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays} days ago`;
-};
-
-type EREvent = {
-  uri: string;
-  eventDate: string;
-  totalArticleCount: number;
-  title: Record<string, string>;
-  summary?: Record<string, string>;
-  images?: string[];
-};
-
 function headline(ev: EREvent) {
   return ev.title?.eng || Object.values(ev.title || {})[0] || "Untitled event";
 }
@@ -139,7 +86,7 @@ function BiasBadge({ label }: { label: BiasLabel }) {
       : "bg-gray-400";
   const text =
     tone === "Unknown"
-      ? "Center" // default to Center label for Unknown
+      ? "Center"
       : tone.charAt(0) + tone.slice(1).toLowerCase();
   return (
     <span
@@ -269,7 +216,7 @@ function Controls({
           items: articles.map((a, i) => ({
             id: String(i),
             source: getSourceName(a),
-            text: a.title, // lightweight text for model fallback
+            text: a.title,
           })),
         };
         const res = await fetch("/api/bias", {
@@ -396,6 +343,8 @@ function Controls({
 
 /* ---------- Page ---------- */
 export default function Dashboard() {
+  const [category, setCategory] = useState<string>("latest");
+
   const [events, setEvents] = useState<EREvent[]>([]);
   const [ePage, setEPage] = useState(1);
   const [ePages, setEPages] = useState(1);
@@ -407,22 +356,17 @@ export default function Dashboard() {
   const [articles, setArticles] = useState<ERArticle[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
   const [errorArticles, setErrorArticles] = useState<string | null>(null);
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  async function loadEvents(page = 1) {
-    setLoading(true);
+  async function loadEvents(page = 1, cat = category) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/events?page=${page}&count=20`, { cache: "no-store" });
-      const res = await fetch(`/api/events?page=${page}&count=20`, { cache: "no-store" });
+      // Passing category for future support; safe if API ignores it.
+      const res = await fetch(
+        `/api/events?page=${page}&count=20&category=${encodeURIComponent(cat)}`,
+        { cache: "no-store" }
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to load events");
-      setEvents(json?.events?.results ?? []);
-      if (!res.ok) throw new Error(json?.error || "events failed");
       setEvents(json?.events?.results ?? []);
       setEPage(json?.events?.page ?? 1);
       setEPages(json?.events?.pages ?? 1);
@@ -432,7 +376,6 @@ export default function Dashboard() {
       setEPage(1);
       setEPages(1);
     } finally {
-      setLoading(false);
       setLoading(false);
     }
   }
@@ -468,8 +411,9 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    loadEvents(1);
-  }, []);
+    loadEvents(1, category);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
 
   // Pass headlines to chatbot for better suggestions/context
   const pageTitles: string[] = useMemo(
@@ -479,97 +423,40 @@ export default function Dashboard() {
         .filter(Boolean),
     [events]
   );
-  useEffect(() => {
-    const fetchNews = async () => {
-      setLoading(true);
-      try {
-        let url = `/api/news?limit=20`;
-        if (selectedCategory !== "All") {
-          url += `&category=${selectedCategory.toLowerCase()}`;
-        }
-        const res = await fetch(url);
-        const data = await res.json();
 
-        // Add mock bias data and category mapping
-        const articlesWithBias = (data.articles || []).map((article: Article) => ({
-          ...article,
-          bias: getRandomBias(),
-          category:
-            selectedCategory === "All"
-              ? categories[Math.floor(Math.random() * (categories.length - 1)) + 1]
-              : selectedCategory,
-        }));
-
-        setArticles(articlesWithBias);
-        setFilteredArticles(articlesWithBias);
-      } catch (err) {
-        console.error("Error fetching news:", err);
-        // Fallback to mock data if API fails
-        const mockArticles: Article[] = [
-          {
-            title: "Global Climate Summit Reaches Historic Agreement on Carbon Emissions",
-            description:
-              "World leaders have reached a landmark agreement to reduce carbon emissions by 50% by 2030, marking a significant step forward in climate action.",
-            source: "Reuters",
-            publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            url: "#",
-            image:
-              "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&h=400&fit=crop",
-            bias: "center",
-            category: "Science",
-          },
-          {
-            title: "Tech Giants Face New Regulations in European Union",
-            description:
-              "The European Union has announced new regulations targeting major technology companies, requiring greater transparency in data handling and algorithmic decision-making.",
-            source: "The Guardian",
-            publishedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-            url: "#",
-            image:
-              "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop",
-            bias: "left",
-            category: "Technology",
-          },
-          {
-            title: "Economic Growth Surges in Q3 Despite Market Volatility",
-            description:
-              "The economy shows strong growth in the third quarter, with GDP increasing by 3.2% despite ongoing market uncertainties and inflation concerns.",
-            source: "Wall Street Journal",
-            publishedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-            url: "#",
-            image:
-              "https://images.unsplash.com/photo-1611974789855-4e9042af2176?w=800&h=400&fit=crop",
-            bias: "right",
-            category: "Business",
-          },
-        ];
-        setArticles(mockArticles);
-        setFilteredArticles(mockArticles);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNews();
-  }, [selectedCategory]);
-
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    if (category === "All") {
-      setFilteredArticles(articles);
-    } else {
-      setFilteredArticles(articles.filter((article) => article.category === category));
-    }
-  };
-
-  // Titles for chatbot context
-  const pageTitles: string[] = events
-    .map((ev) => ev.title?.eng || Object.values(ev.title || {})[0] || "")
-    .filter(Boolean);
+  const headerTitle = useMemo(() => {
+    const item = CATEGORIES.find((c) => c.key === category);
+    return item ? item.label : "Latest";
+  }, [category]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
       {/* LEFT — Newspaper-style feed */}
       <section>
+        {/* Category tabs */}
+        <div className="mb-5 flex flex-wrap gap-2">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCategory(c.key)}
+              className={`px-3 py-1.5 rounded-md text-sm border transition ${
+                category === c.key
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border-gray-200"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-4">
+          <h1 className="text-2xl font-semibold text-gray-900">{headerTitle}</h1>
+          <p className="text-sm text-gray-500">
+            Events from the last 31 days • English • United States
+          </p>
+        </div>
+
         {loading ? (
           <div className="py-16 text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-neutral-900" />
@@ -681,120 +568,12 @@ export default function Dashboard() {
                 </article>
               ))}
             </div>
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-3xl font-bold text-gray-900">Polao Dashboard</h1>
-              <span className="ml-2 text-sm text-gray-500">News with Bias Analysis</span>
-            </div>
-            <div className="text-sm text-gray-500">
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </div>
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
-      {/* LEFT — Newspaper-style feed */}
-      <section>
-        {loading ? (
-          <div className="py-16 text-center">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-neutral-900" />
-            <p className="mt-4 text-neutral-600">Loading latest events…</p>
-          </div>
-        ) : (
-          <>
-            {/* Featured */}
-            {events[0] && (
-              <Link
-                href={`/dashboard/events/${encodeURIComponent(events[0].uri)}`}
-                className="group block overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow"
-              >
-                <div className="md:flex">
-                  <div className="md:w-2/3">
-                    <img
-                      src={
-                        events[0].images?.[0] ||
-                        "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?w=1200&h=630&fit=crop"
-                      }
-                      alt=""
-                      className="h-64 w-full object-cover md:h-80"
-                    />
-                  </div>
-                  <div className="md:w-1/3 p-6 flex flex-col justify-between">
-                    <div>
-                      <div className="mb-2 text-xs text-neutral-500">
-                        {new Date(events[0].eventDate).toDateString()} •{" "}
-                        {events[0].totalArticleCount ?? 0} articles
-                      </div>
-                      <h2 className="font-serif text-2xl font-semibold text-neutral-900 group-hover:underline">
-                        {headline(events[0])}
-                      </h2>
-                      {events[0].summary?.eng && (
-                        <p className="mt-2 leading-relaxed text-neutral-700 line-clamp-3">
-                          {events[0].summary.eng}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-4 font-medium text-blue-700">Read full coverage →</div>
-                  </div>
-                </div>
-              </Link>
-            )}
-
-            {/* Divider */}
-            <div className="my-8 border-t border-neutral-200" />
-
-            {/* Section grid */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {events.slice(1).map((ev) => (
-                <article
-                  key={ev.uri}
-                  className="group rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow"
-                >
-                  <div className="flex items-start gap-4">
-                    {ev.images?.[0] && (
-                      <img
-                        src={ev.images[0]}
-                        alt=""
-                        className="h-24 w-36 rounded object-cover"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="text-[11px] uppercase tracking-wide text-neutral-500">
-                        {new Date(ev.eventDate).toLocaleDateString()}
-                      </div>
-                      <h3 className="mt-1 font-serif text-xl font-semibold text-neutral-900">
-                        <Link
-                          href={`/dashboard/events/${encodeURIComponent(ev.uri)}`}
-                          className="hover:underline"
-                        >
-                          {headline(ev)}
-                        </Link>
-                      </h3>
-                      {ev.summary?.eng && (
-                        <p className="mt-2 line-clamp-3 text-sm text-neutral-700">
-                          {ev.summary.eng}
-                        </p>
-                      )}
-                      <div className="mt-2 text-xs text-neutral-500">
-                        {ev.totalArticleCount ?? 0} articles
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
 
             {/* Pagination */}
             <div className="mt-10 flex items-center justify-center gap-2">
               <button
                 className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
-                onClick={() => loadEvents(ePage - 1)}
+                onClick={() => loadEvents(ePage - 1, category)}
                 disabled={ePage <= 1}
               >
                 Previous
@@ -804,7 +583,7 @@ export default function Dashboard() {
               </span>
               <button
                 className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
-                onClick={() => loadEvents(ePage + 1)}
+                onClick={() => loadEvents(ePage + 1, category)}
                 disabled={ePage >= ePages}
               >
                 Next
@@ -817,6 +596,7 @@ export default function Dashboard() {
       {/* RIGHT — Always-on Chatbot */}
       <aside>
         <ChatbotSidebar
+          // mode defaults to sidebar in your component; leaving it off is fine
           articleTitles={pageTitles}
           heightClass="h-[clamp(420px,64vh,720px)]"
         />
@@ -861,7 +641,7 @@ export default function Dashboard() {
                 <Controls
                   articles={articles}
                   onClassified={() => {
-                    /* no-op, already displayed via Controls state */
+                    /* no-op; handled inside Controls */
                   }}
                 />
               )}
@@ -872,44 +652,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </div>
-                {/* Load More Button */}
-                <div className="text-center mt-12">
-                  <button className="bg-gray-900 text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors">
-                    Load More Stories
-                  </button>
-                </div>
-              </>
-            )}
-          </section>
-            {/* Pagination */}
-            <div className="mt-10 flex items-center justify-center gap-2">
-              <button
-                className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
-                onClick={() => loadEvents(ePage - 1)}
-                disabled={ePage <= 1}
-              >
-                Previous
-              </button>
-              <span className="text-sm text-neutral-600">
-                Page {ePage} / {ePages}
-              </span>
-              <button
-                className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
-                onClick={() => loadEvents(ePage + 1)}
-                disabled={ePage >= ePages}
-              >
-                Next
-              </button>
-            </div>
-          </>
-        )}
-      </section>
-
-      {/* RIGHT — Chatbot (sidebar only, slimmer) */}
-      <aside>
-        <ChatbotSidebar articleTitles={pageTitles} />
-      </aside>
     </div>
   );
 }
