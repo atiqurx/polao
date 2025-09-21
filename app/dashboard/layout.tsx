@@ -18,7 +18,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <div className="w-fit mx-auto text-center">
               <h1
-                className="font-[var(--font-wsj)] text-3xl sm:text-5xl font-bold tracking-tight text-neutral-900 mt-2"
+                className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-neutral-900 mt-2"
                 style={{ letterSpacing: "0.68em" }} // or use Tailwind: tracking-[0.68em]
               >
                 POLAO

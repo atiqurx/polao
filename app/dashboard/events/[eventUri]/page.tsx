@@ -54,7 +54,9 @@ function BiasBadge({ label }: { label: BiasLabel }) {
       ? "bg-gray-700"
       : "bg-gray-400";
   const text =
-    tone === "Unknown" ? "Center" : tone.charAt(0) + tone.slice(1).toLowerCase();
+    tone === "Unknown"
+      ? "Center"
+      : tone.charAt(0) + tone.slice(1).toLowerCase();
   return (
     <span
       className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold text-white select-none ${color}`}
@@ -75,7 +77,7 @@ function ArticleList({
   return (
     <ul className="space-y-3">
       {articles.map((a, idx) => (
-        <li key={idx} className="border rounded-lg p-3 bg-white">
+        <li key={idx} className="rounded-lg p-3 bg-[#f7f6f2]">
           <div className="flex gap-3">
             {a.image && (
               <img
@@ -211,6 +213,10 @@ function Controls({
         />
       )}
 
+      <h2 className="font-serif text-2xl mt-8 mb-6 font-semibold text-gray-900">
+        Story Coverage
+      </h2>
+
       <div className="flex items-center gap-2">
         <button
           onClick={() => setTab("all")}
@@ -330,8 +336,7 @@ export default function EventPage() {
           undefined;
         const maybeSummary =
           nodeA?.event?.summary?.eng || nodeA?.info?.summary?.eng || undefined;
-        const maybeImg =
-          nodeA?.event?.image || list?.[0]?.image || undefined;
+        const maybeImg = nodeA?.event?.image || list?.[0]?.image || undefined;
         const maybeDate =
           nodeA?.event?.date ||
           nodeA?.info?.eventDate ||
@@ -374,7 +379,7 @@ export default function EventPage() {
 
       {/* Hero (uncropped image) */}
       {(eventMeta.summary || eventMeta.image) && (
-        <div className="mb-8 overflow-hidden rounded-2xl border bg-white shadow-sm">
+        <div className="mb-8 overflow-hidden bg-[#f7f6f2]">
           {eventMeta.image && (
             <div className="flex items-center justify-center bg-neutral-100">
               <img

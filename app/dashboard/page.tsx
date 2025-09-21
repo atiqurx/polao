@@ -430,237 +430,249 @@ export default function Dashboard() {
   }, [category]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
-      {/* LEFT — Newspaper-style feed */}
-      <section>
-        {/* Category tabs */}
-        <div className="mb-5 flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => setCategory(c.key)}
-              className={`px-3 py-1.5 rounded-md text-sm border transition ${
-                category === c.key
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border-gray-200"
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
+    <>
+      {/* Category rail (centered WSJ-style) */}
+      <div className="mb-6">
+        <nav aria-label="Sections" className="overflow-x-auto no-scrollbar">
+          <ul className="flex justify-center gap-6 sm:gap-8 whitespace-nowrap px-1 text-[15px] font-semibold tracking-tight text-neutral-600">
+            {CATEGORIES.map((c) => {
+              const active = category === c.key;
+              return (
+                <li key={c.key}>
+                  <button
+                    onClick={() => setCategory(c.key)}
+                    className={`py-3 transition-colors bg-transparent appearance-none outline-none focus:outline-none focus:ring-0 ${
+                      active
+                        ? "text-blue-600"
+                        : "text-neutral-700 hover:text-blue-600"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
 
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            {headerTitle}
-          </h1>
-          <p className="text-sm text-gray-500">
-            Events from the last 31 days • English • United States
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="py-16 text-center">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-neutral-900" />
-            <p className="mt-4 text-neutral-600">Loading latest events…</p>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
+        {/* LEFT — Newspaper-style feed */}
+        <section>
+          <div className="mb-4">
+            <h1 className="text-2xl font-semibold text-gray-900">
+              {headerTitle}
+            </h1>
+            <p className="text-sm text-gray-500">
+              Events from the last 31 days • English • United States
+            </p>
           </div>
-        ) : (
-          <>
-            {/* Featured story */}
-            {events[0] && (
-              <div className="group overflow-hidden bg-[#f7f6f2] shadow-sm transition-shadow hover:shadow">
-                <div className="md:flex">
-                  <div className="md:w-2/3">
-                    <img
-                      src={
-                        events[0].images?.[0] ||
-                        "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?w=1200&h=630&fit=crop"
-                      }
-                      alt=""
-                      className="h-64 w-full object-cover md:h-80"
-                    />
-                  </div>
-                  <div className="md:w-1/3 p-6 flex flex-col justify-between">
-                    <div>
-                      <div className="mb-2 text-xs text-neutral-500">
-                        {new Date(events[0].eventDate).toDateString()} •{" "}
-                        {events[0].totalArticleCount ?? 0} articles
+
+          {loading ? (
+            <div className="py-16 text-center">
+              <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-neutral-900" />
+              <p className="mt-4 text-neutral-600">Loading latest events…</p>
+            </div>
+          ) : (
+            <>
+              {/* Featured story */}
+              {events[0] && (
+                <div className="group overflow-hidden bg-[#f7f6f2] shadow-sm transition-shadow hover:shadow">
+                  <div className="md:flex">
+                    <div className="md:w-2/3">
+                      <img
+                        src={
+                          events[0].images?.[0] ||
+                          "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?w=1200&h=630&fit=crop"
+                        }
+                        alt=""
+                        className="h-64 w-full object-cover md:h-80"
+                      />
+                    </div>
+                    <div className="md:w-1/3 p-6 flex flex-col justify-between">
+                      <div>
+                        <div className="mb-2 text-xs text-neutral-500">
+                          {new Date(events[0].eventDate).toDateString()} •{" "}
+                          {events[0].totalArticleCount ?? 0} articles
+                        </div>
+                        <h2 className="font-serif text-2xl font-semibold text-neutral-900">
+                          <Link
+                            href={`/dashboard/events/${encodeURIComponent(
+                              events[0].uri
+                            )}`}
+                            className="group-hover:underline"
+                          >
+                            {headline(events[0])}
+                          </Link>
+                        </h2>
+                        {events[0].summary?.eng && (
+                          <p className="mt-2 leading-relaxed text-neutral-700 line-clamp-3">
+                            {events[0].summary.eng}
+                          </p>
+                        )}
                       </div>
-                      <h2 className="font-serif text-2xl font-semibold text-neutral-900">
+                      <div className="mt-4 flex items-center gap-3">
                         <Link
                           href={`/dashboard/events/${encodeURIComponent(
                             events[0].uri
                           )}`}
-                          className="group-hover:underline"
+                          className="text-blue-700 font-medium"
                         >
-                          {headline(events[0])}
+                          Read full coverage →
                         </Link>
-                      </h2>
-                      {events[0].summary?.eng && (
-                        <p className="mt-2 leading-relaxed text-neutral-700 line-clamp-3">
-                          {events[0].summary.eng}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-4 flex items-center gap-3">
-                      <Link
-                        href={`/dashboard/events/${encodeURIComponent(
-                          events[0].uri
-                        )}`}
-                        className="text-blue-700 font-medium"
-                      >
-                        Read full coverage →
-                      </Link>
-                      <button
-                        onClick={() => openEvent(events[0]!)}
-                        className="rounded border px-2 py-1 text-sm hover:bg-neutral-50"
-                      >
-                        Quick view
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Divider */}
-            <div className="my-8 border-t border-neutral-200" />
-
-            {/* Grid of stories */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {events.slice(1).map((ev) => (
-                <article
-                  key={ev.uri}
-                  className="group bg-[#f7f6f2] p-5 shadow-sm transition-shadow hover:shadow"
-                >
-                  <div className="flex items-start gap-4">
-                    {ev.images?.[0] && (
-                      <img
-                        src={ev.images[0]}
-                        alt=""
-                        className="h-24 w-36 rounded object-cover"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="text-[11px] uppercase tracking-wide text-neutral-500">
-                        {new Date(ev.eventDate).toLocaleDateString()}
-                      </div>
-                      <h3 className="mt-1 font-serif text-xl font-semibold text-neutral-900">
-                        <Link
-                          href={`/dashboard/events/${encodeURIComponent(
-                            ev.uri
-                          )}`}
-                          className="hover:underline"
-                        >
-                          {headline(ev)}
-                        </Link>
-                      </h3>
-                      {ev.summary?.eng && (
-                        <p className="mt-2 line-clamp-3 text-sm text-neutral-700">
-                          {ev.summary.eng}
-                        </p>
-                      )}
-                      <div className="mt-3 flex items-center gap-3">
-                        <span className="text-xs text-neutral-500">
-                          {ev.totalArticleCount ?? 0} articles
-                        </span>
                         <button
-                          onClick={() => openEvent(ev)}
-                          className="rounded border px-2 py-1 text-xs hover:bg-neutral-50"
+                          onClick={() => openEvent(events[0]!)}
+                          className="rounded border px-2 py-1 text-sm hover:bg-neutral-50"
                         >
                           Quick view
                         </button>
                       </div>
                     </div>
                   </div>
-                </article>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="mt-10 flex items-center justify-center gap-2">
-              <button
-                className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
-                onClick={() => loadEvents(ePage - 1, category)}
-                disabled={ePage <= 1}
-              >
-                Previous
-              </button>
-              <span className="text-sm text-neutral-600">
-                Page {ePage} / {ePages}
-              </span>
-              <button
-                className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
-                onClick={() => loadEvents(ePage + 1, category)}
-                disabled={ePage >= ePages}
-              >
-                Next
-              </button>
-            </div>
-          </>
-        )}
-      </section>
-
-      {/* RIGHT — Always-on Chatbot */}
-      <aside>
-        <ChatbotSidebar
-          // mode defaults to sidebar in your component; leaving it off is fine
-          articleTitles={pageTitles}
-          heightClass="h-[clamp(420px,64vh,720px)]"
-        />
-      </aside>
-
-      {/* Drawer for bias quick view */}
-      {drawerOpen && selected && (
-        <div
-          className="fixed inset-0 bg-black/40 flex"
-          onClick={() => setDrawerOpen(false)}
-        >
-          <div
-            className="ml-auto h-full w-full max-w-3xl bg-white p-6 overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-xs text-gray-500">
-                  {new Date(selected.eventDate).toLocaleString()} •{" "}
-                  {selected.uri}
                 </div>
-                <h2 className="text-lg font-semibold">{headline(selected)}</h2>
-                {selected.summary?.eng && (
-                  <p className="text-sm text-gray-700 mt-1">
-                    {selected.summary.eng}
-                  </p>
-                )}
-              </div>
-              <button
-                className="px-2 py-1 rounded border"
-                onClick={() => setDrawerOpen(false)}
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-4">
-              {loadingArticles ? (
-                <p>Loading articles…</p>
-              ) : errorArticles ? (
-                <p className="text-red-600 text-sm">Error: {errorArticles}</p>
-              ) : (
-                <Controls
-                  articles={articles}
-                  onClassified={() => {
-                    /* no-op; handled inside Controls */
-                  }}
-                />
               )}
-              <p className="mt-2 text-xs text-neutral-400">
-                Links open in a new tab.
-              </p>
+
+              {/* Divider */}
+              <div className="my-8 border-t border-neutral-200" />
+
+              {/* Grid of stories */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {events.slice(1).map((ev) => (
+                  <article
+                    key={ev.uri}
+                    className="group bg-[#f7f6f2] p-5 shadow-sm transition-shadow hover:shadow"
+                  >
+                    <div className="flex items-start gap-4">
+                      {ev.images?.[0] && (
+                        <img
+                          src={ev.images[0]}
+                          alt=""
+                          className="h-24 w-36 rounded object-cover"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="text-[11px] uppercase tracking-wide text-neutral-500">
+                          {new Date(ev.eventDate).toLocaleDateString()}
+                        </div>
+                        <h3 className="mt-1 font-serif text-xl font-semibold text-neutral-900">
+                          <Link
+                            href={`/dashboard/events/${encodeURIComponent(
+                              ev.uri
+                            )}`}
+                            className="hover:underline"
+                          >
+                            {headline(ev)}
+                          </Link>
+                        </h3>
+                        {ev.summary?.eng && (
+                          <p className="mt-2 line-clamp-3 text-sm text-neutral-700">
+                            {ev.summary.eng}
+                          </p>
+                        )}
+                        <div className="mt-3 flex items-center gap-3">
+                          <span className="text-xs text-neutral-500">
+                            {ev.totalArticleCount ?? 0} articles
+                          </span>
+                          <button
+                            onClick={() => openEvent(ev)}
+                            className="rounded border px-2 py-1 text-xs hover:bg-neutral-50"
+                          >
+                            Quick view
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className="mt-10 flex items-center justify-center gap-2">
+                <button
+                  className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
+                  onClick={() => loadEvents(ePage - 1, category)}
+                  disabled={ePage <= 1}
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-neutral-600">
+                  Page {ePage} / {ePages}
+                </span>
+                <button
+                  className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
+                  onClick={() => loadEvents(ePage + 1, category)}
+                  disabled={ePage >= ePages}
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* RIGHT — Always-on Chatbot */}
+        <aside>
+          <ChatbotSidebar
+            // mode defaults to sidebar in your component; leaving it off is fine
+            articleTitles={pageTitles}
+            heightClass="h-[clamp(420px,64vh,720px)]"
+          />
+        </aside>
+
+        {/* Drawer for bias quick view */}
+        {drawerOpen && selected && (
+          <div
+            className="fixed inset-0 bg-black/40 flex"
+            onClick={() => setDrawerOpen(false)}
+          >
+            <div
+              className="ml-auto h-full w-full max-w-3xl bg-white p-6 overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs text-gray-500">
+                    {new Date(selected.eventDate).toLocaleString()} •{" "}
+                    {selected.uri}
+                  </div>
+                  <h2 className="text-lg font-semibold">
+                    {headline(selected)}
+                  </h2>
+                  {selected.summary?.eng && (
+                    <p className="text-sm text-gray-700 mt-1">
+                      {selected.summary.eng}
+                    </p>
+                  )}
+                </div>
+                <button
+                  className="px-2 py-1 rounded border"
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-4">
+                {loadingArticles ? (
+                  <p>Loading articles…</p>
+                ) : errorArticles ? (
+                  <p className="text-red-600 text-sm">Error: {errorArticles}</p>
+                ) : (
+                  <Controls
+                    articles={articles}
+                    onClassified={() => {
+                      /* no-op; handled inside Controls */
+                    }}
+                  />
+                )}
+                <p className="mt-2 text-xs text-neutral-400">
+                  Links open in a new tab.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }

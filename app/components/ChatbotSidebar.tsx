@@ -249,12 +249,12 @@ export default function ChatbotSidebar({
   return (
     <div className="sticky top-4">
       <div
-        className={`flex ${heightClass} w-full flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200/60`}
+        className={`flex ${heightClass} w-full flex-col overflow-hidden py-6 px-2 bg-white shadow-sm ring-1 ring-gray-200/60`}
       >
         {/* header */}
         <div className="flex items-center justify-between px-3 py-2">
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold text-gray-900">
+            <h3 className="truncate text-lg font-semibold text-gray-900">
               Polao Assistant
             </h3>
             <p className="text-[11px] text-gray-500">
@@ -266,7 +266,7 @@ export default function ChatbotSidebar({
               setMessages((m) => (m.length ? [m[0]] : []));
               setShowSuggestions(true);
             }}
-            className="rounded-md px-2 py-1 text-[11px] text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50"
+            className=" px-2 py-1 text-[11px] text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50"
             title="New chat"
           >
             New
@@ -370,9 +370,9 @@ export default function ChatbotSidebar({
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={onKeyDown}
-                  placeholder="…"
+                  placeholder="Ask me about bias, trends, or news..."
                   rows={1}
-                  className="block w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
+                  className="block w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
                   disabled={isLoading}
                 />
               </div>
@@ -380,7 +380,7 @@ export default function ChatbotSidebar({
             <button
               type="submit"
               disabled={isLoading || !inputText.trim()}
-              className="inline-flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-md bg-blue-600 px-3.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 px-2"
             >
               Send
             </button>
