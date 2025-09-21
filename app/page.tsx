@@ -1,206 +1,345 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "next/link";
+import {
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+  BarChart3,
+  Globe2,
+  Menu,
+  X,
+} from "lucide-react";
+import React from "react";
 
-export default function Home() {
-  const [isLogin, setIsLogin] = useState(true);
+export default function Page() {
+  return (
+    <div className="min-h-screen bg-white text-zinc-900">
+      {/* light-theme button/link utilities */}
+      <style jsx global>{`
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0.75rem; /* rounded-xl */
+          padding: 0.5rem 1rem; /* px-4 py-2 */
+          font-size: 0.875rem; /* text-sm */
+          font-weight: 500;
+          transition: background-color 150ms, color 150ms, border-color 150ms,
+            box-shadow 150ms, transform 150ms;
+        }
+        .btn.primary {
+          background: #0a0a0a; /* zinc-950-ish */
+          color: #fff;
+        }
+        .btn.primary:hover {
+          background: #000;
+        }
+        .btn.ghost {
+          border: 1px solid rgb(212 212 216); /* zinc-300 */
+          color: rgb(39 39 42); /* zinc-800 */
+          background: #fff;
+        }
+        .btn.ghost:hover {
+          background: rgb(244 244 245); /* zinc-100 */
+        }
+        .nav-link {
+          font-size: 0.875rem;
+          color: rgb(63 63 70); /* zinc-700 */
+        }
+        .nav-link:hover {
+          color: rgb(24 24 27); /* zinc-900 */
+        }
+      `}</style>
+
+      <Hero />
+      <LogosStrip />
+      <Features />
+      <HowItWorks />
+      <CTA />
+      <SiteFooter />
+    </div>
+  );
+}
+
+function RiceLogo() {
+  return (
+    <div className="h-8 w-8 rounded-xl bg-[#2FB05C] grid place-items-center shadow-sm">
+      {/* simplified rice grain */}
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+        <defs>
+          <linearGradient
+            id="g"
+            x1="4"
+            y1="6"
+            x2="18"
+            y2="20"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#fff" />
+            <stop offset="1" stopColor="#f3f0e8" />
+          </linearGradient>
+        </defs>
+        <ellipse
+          cx="12"
+          cy="12"
+          rx="6.5"
+          ry="9"
+          fill="url(#g)"
+          transform="rotate(15 12 12)"
+        />
+        <path
+          d="M15 7c1.3 1.2 1.8 3 1.2 4.4-.7 1.5-2.5 2.4-3.9 1.6-.3-.2-.5-.6-.4-1 0-1.2 1.7-3.1 3.1-4.9z"
+          fill="#fff"
+          opacity=".7"
+        />
+      </svg>
+    </div>
+  );
+}
+
+/* ------------------------------ HERO ------------------------------ */
+function Hero() {
+  return (
+    <section className="relative overflow-hidden">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:py-20">
+        <div>
+          <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600 shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" /> Bias-aware news, simplified
+          </p>
+          <h1 className="text-balance text-4xl font-semibold leading-[1.1] sm:text-5xl">
+            See every side of the story—
+            <span className="text-[#2FB05C]"> clearly</span>.
+          </h1>
+          <p className="mt-4 max-w-xl text-pretty text-base text-zinc-600">
+            Polao clusters headlines and highlights framing so you can compare
+            left, right, and center in one view. Log in to personalize topics
+            and get a balanced daily digest.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Link href="/auth/login" className="btn primary group">
+              Log in{" "}
+              <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <a href="#features" className="btn ghost">
+              Explore features
+            </a>
+          </div>
+
+          <ul className="mt-6 grid grid-cols-2 gap-4 text-sm text-zinc-600 sm:max-w-md">
+            <li className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-[#2FB05C]" /> Privacy-first
+            </li>
+            <li className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-[#2FB05C]" /> Bias support
+              meter
+            </li>
+            <li className="flex items-center gap-2">
+              <Globe2 className="h-4 w-4 text-[#2FB05C]" /> Global sources
+            </li>
+            <li className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[#2FB05C]" /> AI summaries
+            </li>
+          </ul>
+        </div>
+
+        {/* Visual mock */}
+        <div className="relative">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
+            <Image
+              src="/polao.png"
+              alt="Polao preview"
+              width={1200}
+              height={800}
+              className="rounded-lg border border-zinc-200"
+            />
+          </div>
+          <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-[#2FB05C]/20 blur-3xl" />
+          <div className="pointer-events-none absolute -right-16 -bottom-12 h-40 w-40 rounded-full bg-sky-400/20 blur-3xl" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------ LOGOS STRIP ------------------------------ */
+function LogosStrip() {
+  return (
+    <section className="border-y border-zinc-200/70 bg-zinc-50">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-6 sm:px-6">
+        <span className="text-xs uppercase tracking-wide text-zinc-500">
+          Powered by
+        </span>
+        <div className="flex flex-wrap items-center gap-6 opacity-80">
+          <Logo name="NewsAPI" />
+          <Logo name="Mediastack" />
+          <Logo name="Auth0" />
+          <Logo name="Vercel" />
+          <Logo name="OpenAI" />
+        </div>
+      </div>
+    </section>
+  );
+}
+function Logo({ name }: { name: string }) {
+  return <div className="text-sm font-semibold text-zinc-600">{name}</div>;
+}
+
+/* ------------------------------ FEATURES ------------------------------ */
+function Features() {
+  const list = [
+    {
+      icon: <BarChart3 className="h-5 w-5" />,
+      title: "Bias Support Meter",
+      desc: "See the average lean across sources in each cluster—left, center, right.",
+    },
+    {
+      icon: <Sparkles className="h-5 w-5" />,
+      title: "Neutral & Counter-bias Summaries",
+      desc: "Read a neutral synopsis and what each side would emphasize, with citations.",
+    },
+    {
+      icon: <ShieldCheck className="h-5 w-5" />,
+      title: "Framing Lens",
+      desc: "Highlight loaded language and one-click neutralize headlines.",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Polao</h1>
-              <span className="ml-2 text-sm text-gray-500">News with Bias Analysis</span>
+    <section id="features" className="py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mb-10 flex items-end justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">Why Polao?</h2>
+            <p className="mt-2 max-w-2xl text-zinc-600">
+              Compare perspectives without the noise. Polao organizes coverage
+              and helps you spot framing in seconds.
+            </p>
+          </div>
+          <a
+            href="#how"
+            className="hidden text-sm text-[#2FB05C] hover:underline md:inline"
+          >
+            See how it works →
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          {list.map((f) => (
+            <div
+              key={f.title}
+              className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+            >
+              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#2FB05C]/15 text-[#2FB05C]">
+                {f.icon}
+              </div>
+              <h3 className="text-lg font-semibold">{f.title}</h3>
+              <p className="mt-1 text-sm text-zinc-600">{f.desc}</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setIsLogin(true)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  isLogin
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Login
-              </button>
-              <button
-                onClick={() => setIsLogin(false)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  !isLogin
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Sign Up
-              </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------ HOW IT WORKS ------------------------------ */
+function HowItWorks() {
+  const steps = [
+    {
+      n: 1,
+      t: "Ingest & cluster",
+      d: "We fetch articles from multiple APIs and group similar stories.",
+    },
+    {
+      n: 2,
+      t: "Score bias",
+      d: "Combine source priors with article-level stance for a fair meter.",
+    },
+    {
+      n: 3,
+      t: "Summarize & highlight",
+      d: "AI creates neutral and counter-bias views; Lens marks framing.",
+    },
+    {
+      n: 4,
+      t: "Personalize",
+      d: "Log in to save topics and get a balanced daily digest.",
+    },
+  ];
+  return (
+    <section id="how" className="bg-zinc-50 py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <h2 className="text-2xl font-semibold">How it works</h2>
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-4">
+          {steps.map((s) => (
+            <div
+              key={s.n}
+              className="rounded-2xl border border-zinc-200 bg-white p-5"
+            >
+              <div className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-sm font-semibold text-zinc-700">
+                {s.n}
+              </div>
+              <h3 className="font-semibold">{s.t}</h3>
+              <p className="mt-1 text-sm text-zinc-600">{s.d}</p>
             </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------ CTA ------------------------------ */
+function CTA() {
+  return (
+    <section id="pricing" className="py-16">
+      <div className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-8 text-center shadow-sm">
+        <h3 className="text-2xl font-semibold">Ready for a balanced feed?</h3>
+        <p className="mx-auto mt-2 max-w-2xl text-zinc-600">
+          Log in to customize topics, set your bias-diet, and receive a daily
+          recap with sources from across the spectrum.
+        </p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <Link href="/auth/login" className="btn primary">
+            Log in
+          </Link>
+          <a href="#features" className="btn ghost">
+            See features
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------ FOOTER ------------------------------ */
+function SiteFooter() {
+  return (
+    <footer className="border-t border-zinc-200 py-10 text-sm">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+          <div className="flex items-center gap-2">
+            <RiceLogo />
+            <span className="font-semibold">Polao</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-zinc-600">
+            <Link href="/privacy" className="hover:underline">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:underline">
+              Terms
+            </Link>
+            <a href="#faq" className="hover:underline">
+              FAQ
+            </a>
+            <span className="opacity-70">
+              © {new Date().getFullYear()} Polao
+            </span>
           </div>
         </div>
-      </header>
-
-      {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Stay Informed with
-            <span className="text-blue-600"> Transparent</span> News
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Get the latest news with AI-powered bias analysis. Understand the political leanings 
-            and credibility of every article before you read it.
-          </p>
-          
-          {/* Login/Signup Form */}
-          <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {isLogin ? 'Welcome Back' : 'Join Polao'}
-            </h2>
-            
-            <form className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your email"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your password"
-                />
-              </div>
-              
-              {!isLogin && (
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Confirm your password"
-                  />
-                </div>
-              )}
-              
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              >
-                {isLogin ? 'Login' : 'Create Account'}
-              </button>
-            </form>
-            
-            <div className="mt-4 text-center">
-              <Link 
-                href="/dashboard" 
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                Continue as Guest →
-              </Link>
-            </div>
-          </div>
-
-          {/* Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-6 shadow-sm">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Bias Detection</h3>
-              <p className="text-gray-600 text-sm">
-                AI-powered analysis identifies political leanings and potential bias in news articles.
-              </p>
-            </div>
-            
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-6 shadow-sm">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Real-time Analysis</h3>
-              <p className="text-gray-600 text-sm">
-                Get instant bias analysis as news breaks, helping you make informed decisions.
-              </p>
-            </div>
-            
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-6 shadow-sm">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Source Credibility</h3>
-              <p className="text-gray-600 text-sm">
-                Track the reliability and political stance of news sources over time.
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Polao</h3>
-              <p className="text-gray-400 text-sm">
-                Empowering readers with transparent news analysis and bias detection.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="#" className="hover:text-white">API</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">Changelog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">About</a></li>
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
-                <li><a href="#" className="hover:text-white">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Help Center</a></li>
-                <li><a href="#" className="hover:text-white">Documentation</a></li>
-                <li><a href="#" className="hover:text-white">Status</a></li>
-                <li><a href="#" className="hover:text-white">Community</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Polao. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </footer>
   );
 }
