@@ -1,6 +1,5 @@
 // app/dashboard/layout.tsx
 import type { ReactNode } from "react";
-import ChatbotSidebar from "../components/ChatbotSidebar";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -27,17 +26,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Main layout: left content + persistent right sidebar */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* LEFT: page-specific content */}
-          <section className="lg:col-span-8 xl:col-span-9">{children}</section>
-
-          {/* RIGHT: persistent chatbot sidebar */}
-          <aside className="lg:col-span-4 xl:col-span-3">
-            <ChatbotSidebar mode="sidebar" />
-          </aside>
-        </div>
+      {/* Page content */}
+      <main className="mx-auto max-w-8xl px-4 sm:px-6 lg:px-8 py-8">
+        {children}
       </main>
     </div>
   );

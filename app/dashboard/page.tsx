@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import ChatbotSidebar from "../components/ChatbotSidebar";
 import BiasDistribution from "@/components/BiasDistribution";
@@ -84,6 +85,19 @@ const formatTimeAgo = (publishedAt: string) => {
   const diffInDays = Math.floor(diffInHours / 24);
   return `${diffInDays} days ago`;
 };
+
+type EREvent = {
+  uri: string;
+  eventDate: string;
+  totalArticleCount: number;
+  title: Record<string, string>;
+  summary?: Record<string, string>;
+  images?: string[];
+};
+
+function headline(ev: EREvent) {
+  return ev.title?.eng || Object.values(ev.title || {})[0] || "Untitled event";
+}
 
 function domainFromUrl(u: string) {
   try {
@@ -397,13 +411,18 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(false);
 
   async function loadEvents(page = 1) {
     setLoading(true);
+    setLoading(true);
     try {
+      const res = await fetch(`/api/events?page=${page}&count=20`, { cache: "no-store" });
       const res = await fetch(`/api/events?page=${page}&count=20`, { cache: "no-store" });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to load events");
+      setEvents(json?.events?.results ?? []);
+      if (!res.ok) throw new Error(json?.error || "events failed");
       setEvents(json?.events?.results ?? []);
       setEPage(json?.events?.page ?? 1);
       setEPages(json?.events?.pages ?? 1);
@@ -413,6 +432,7 @@ export default function Dashboard() {
       setEPage(1);
       setEPages(1);
     } finally {
+      setLoading(false);
       setLoading(false);
     }
   }
@@ -540,6 +560,11 @@ export default function Dashboard() {
       setFilteredArticles(articles.filter((article) => article.category === category));
     }
   };
+
+  // Titles for chatbot context
+  const pageTitles: string[] = events
+    .map((ev) => ev.title?.eng || Object.values(ev.title || {})[0] || "")
+    .filter(Boolean);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
@@ -673,154 +698,97 @@ export default function Dashboard() {
                 day: "numeric",
               })}
             </div>
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
+      {/* LEFT — Newspaper-style feed */}
+      <section>
+        {loading ? (
+          <div className="py-16 text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-neutral-900" />
+            <p className="mt-4 text-neutral-600">Loading latest events…</p>
           </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8 py-4 overflow-x-auto">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => handleCategoryChange(category)}
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-                  selectedCategory === category
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
+        ) : (
+          <>
+            {/* Featured */}
+            {events[0] && (
+              <Link
+                href={`/dashboard/events/${encodeURIComponent(events[0].uri)}`}
+                className="group block overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow"
               >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content with persistent right sidebar */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* LEFT: news feed */}
-          <section className="lg:col-span-8 xl:col-span-9">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                  <p className="text-gray-600">
-                    Loading {selectedCategory.toLowerCase()} news...
-                  </p>
+                <div className="md:flex">
+                  <div className="md:w-2/3">
+                    <img
+                      src={
+                        events[0].images?.[0] ||
+                        "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?w=1200&h=630&fit=crop"
+                      }
+                      alt=""
+                      className="h-64 w-full object-cover md:h-80"
+                    />
+                  </div>
+                  <div className="md:w-1/3 p-6 flex flex-col justify-between">
+                    <div>
+                      <div className="mb-2 text-xs text-neutral-500">
+                        {new Date(events[0].eventDate).toDateString()} •{" "}
+                        {events[0].totalArticleCount ?? 0} articles
+                      </div>
+                      <h2 className="font-serif text-2xl font-semibold text-neutral-900 group-hover:underline">
+                        {headline(events[0])}
+                      </h2>
+                      {events[0].summary?.eng && (
+                        <p className="mt-2 leading-relaxed text-neutral-700 line-clamp-3">
+                          {events[0].summary.eng}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-4 font-medium text-blue-700">Read full coverage →</div>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <>
-                {/* Featured Story */}
-                {filteredArticles.length > 0 && (
-                  <div className="mb-12">
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                      <div className="md:flex">
-                        <div className="md:w-2/3">
-                          <img
-                            src={
-                              filteredArticles[0]?.image ||
-                              "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&h=400&fit=crop"
-                            }
-                            alt={filteredArticles[0]?.title}
-                            className="w-full h-64 md:h-80 object-cover"
-                          />
-                        </div>
-                        <div className="md:w-1/3 p-6 flex flex-col justify-between">
-                          <div>
-                            <div className="flex items-center space-x-2 mb-3">
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full border bias-indicator ${getBiasColor(
-                                  filteredArticles[0]?.bias || "center"
-                                )}`}
-                              >
-                                {getBiasLabel(filteredArticles[0]?.bias || "center")}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                {filteredArticles[0]?.source}
-                              </span>
-                              <span className="text-sm text-gray-500">•</span>
-                              <span className="text-sm text-gray-500">
-                                {formatTimeAgo(
-                                  filteredArticles[0]?.publishedAt ||
-                                    new Date().toISOString()
-                                )}
-                              </span>
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
-                              {filteredArticles[0]?.title}
-                            </h2>
-                            <p className="text-gray-600 leading-relaxed">
-                              {filteredArticles[0]?.description}
-                            </p>
-                          </div>
-                          <div className="mt-4">
-                            <a
-                              href={filteredArticles[0]?.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              Read Full Story →
-                            </a>
-                          </div>
-                        </div>
+              </Link>
+            )}
+
+            {/* Divider */}
+            <div className="my-8 border-t border-neutral-200" />
+
+            {/* Section grid */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {events.slice(1).map((ev) => (
+                <article
+                  key={ev.uri}
+                  className="group rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow"
+                >
+                  <div className="flex items-start gap-4">
+                    {ev.images?.[0] && (
+                      <img
+                        src={ev.images[0]}
+                        alt=""
+                        className="h-24 w-36 rounded object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="text-[11px] uppercase tracking-wide text-neutral-500">
+                        {new Date(ev.eventDate).toLocaleDateString()}
+                      </div>
+                      <h3 className="mt-1 font-serif text-xl font-semibold text-neutral-900">
+                        <Link
+                          href={`/dashboard/events/${encodeURIComponent(ev.uri)}`}
+                          className="hover:underline"
+                        >
+                          {headline(ev)}
+                        </Link>
+                      </h3>
+                      {ev.summary?.eng && (
+                        <p className="mt-2 line-clamp-3 text-sm text-neutral-700">
+                          {ev.summary.eng}
+                        </p>
+                      )}
+                      <div className="mt-2 text-xs text-neutral-500">
+                        {ev.totalArticleCount ?? 0} articles
                       </div>
                     </div>
                   </div>
-                )}
-
-                {/* News Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredArticles.slice(1).map((article, idx) => (
-                    <article
-                      key={idx}
-                      className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md news-card"
-                    >
-                      <img
-                        src={
-                          article.image ||
-                          "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&h=400&fit=crop"
-                        }
-                        alt={article.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="p-6">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full border bias-indicator ${getBiasColor(
-                              article.bias || "center"
-                            )}`}
-                          >
-                            {getBiasLabel(article.bias || "center")}
-                          </span>
-                          <span className="text-sm text-gray-500">{article.source}</span>
-                          <span className="text-sm text-gray-500">•</span>
-                          <span className="text-sm text-gray-500">
-                            {formatTimeAgo(article.publishedAt)}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 leading-tight">
-                          {article.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                          {article.description}
-                        </p>
-                        <a
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                        >
-                          Read More →
-                        </a>
-                      </div>
-                    </article>
-                  ))}
-                </div>
+                </article>
+              ))}
+            </div>
 
             {/* Pagination */}
             <div className="mt-10 flex items-center justify-center gap-2">
@@ -914,57 +882,34 @@ export default function Dashboard() {
               </>
             )}
           </section>
+            {/* Pagination */}
+            <div className="mt-10 flex items-center justify-center gap-2">
+              <button
+                className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
+                onClick={() => loadEvents(ePage - 1)}
+                disabled={ePage <= 1}
+              >
+                Previous
+              </button>
+              <span className="text-sm text-neutral-600">
+                Page {ePage} / {ePages}
+              </span>
+              <button
+                className="rounded border bg-white px-3 py-1 hover:bg-neutral-50 disabled:opacity-50"
+                onClick={() => loadEvents(ePage + 1)}
+                disabled={ePage >= ePages}
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
+      </section>
 
-          {/* RIGHT: persistent chatbot sidebar */}
-          <aside className="lg:col-span-4 xl:col-span-3">
-            <ChatbotSidebar mode="sidebar" />
-          </aside>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Polao Dashboard</h3>
-              <p className="text-gray-400 text-sm">
-                Real-time news analysis with transparent bias indicators for informed decision making.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Categories</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Business</a></li>
-                <li><a href="#" className="hover:text-white">Technology</a></li>
-                <li><a href="#" className="hover:text-white">Science</a></li>
-                <li><a href="#" className="hover:text-white">Health</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Analysis</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Bias Detection</a></li>
-                <li><a href="#" className="hover:text-white">Source Analysis</a></li>
-                <li><a href="#" className="hover:text-white">Trends</a></li>
-                <li><a href="#" className="hover:text-white">Reports</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Tools</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">API Access</a></li>
-                <li><a href="#" className="hover:text-white">Data Export</a></li>
-                <li><a href="#" className="hover:text-white">Alerts</a></li>
-                <li><a href="#" className="hover:text-white">Settings</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Polao. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      {/* RIGHT — Chatbot (sidebar only, slimmer) */}
+      <aside>
+        <ChatbotSidebar articleTitles={pageTitles} />
+      </aside>
     </div>
   );
 }

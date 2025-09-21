@@ -1,58 +1,102 @@
-import { NextRequest, NextResponse } from 'next/server';
+// app/api/chatbot/route.ts
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "";
+const MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const BASE = "https://generativelanguage.googleapis.com/v1beta";
+
+export async function POST(req: NextRequest) {
   try {
-    const { message, context } = await request.json();
+    const { message, context, titles } = await req.json();
 
-    if (!message) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    if (!message || typeof message !== "string") {
+      return NextResponse.json(
+        { error: "Body must include { message: string }" },
+        { status: 400 }
+      );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
+    // No API key? Return a deterministic echo for local dev.
+    if (!API_KEY) {
+      const echo = [
+        `🔧 Dev mode (no GOOGLE_API_KEY):`,
+        `Message: ${message}`,
+        context ? `Context: ${context}` : "",
+        Array.isArray(titles) && titles.length
+          ? `Titles:\n${titles.slice(0, 25).map((t: string) => `- ${t}`).join("\n")}`
+          : "Titles: (none)"
+      ]
+        .filter(Boolean)
+        .join("\n");
+      return NextResponse.json({ response: echo });
     }
 
-    // Call Gemini API
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `You are a news analysis assistant for Polao, a platform that provides bias analysis for news articles. 
-            
-Context: ${context || 'general news analysis'}
+    const titlesBlock =
+      Array.isArray(titles) && titles.length
+        ? `Relevant page titles:\n${titles.slice(0, 25).map((t: string) => `- ${t}`).join("\n")}`
+        : "Relevant page titles: (none)";
 
-User question: ${message}
+    const userText = [
+      "You are Polao, a concise news assistant that explains bias and sources.",
+      context ? `Context: ${context}` : "",
+      titlesBlock,
+      "",
+      `User: ${message}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-Please provide a helpful response about news bias analysis, trending topics, or general news questions. Keep responses concise but informative. If asked about specific bias analysis, explain the different types of bias (left-leaning, right-leaning, centrist) and how they might affect news reporting.`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        }
-      })
+    const url = `${BASE}/models/${encodeURIComponent(MODEL)}:generateContent?key=${API_KEY}`;
+    const body = {
+      contents: [{ role: "user", parts: [{ text: userText }] }],
+      generationConfig: { temperature: 0.4, topK: 32, topP: 0.95, maxOutputTokens: 1024 },
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
     });
 
-    if (!geminiResponse.ok) {
-      throw new Error(`Gemini API error: ${geminiResponse.status}`);
+    // Fallback to pro if flash 404s (common in some regions/accounts)
+    let json: any = null;
+    if (!res.ok) {
+      if (res.status === 404 && MODEL === "gemini-1.5-flash") {
+        const fbUrl = `${BASE}/models/${encodeURIComponent("gemini-1.5-pro")}:generateContent?key=${API_KEY}`;
+        const fbRes = await fetch(fbUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!fbRes.ok) {
+          return NextResponse.json(
+            { error: `Gemini API error (fallback): ${fbRes.status}`, detail: await fbRes.text() },
+            { status: 500 }
+          );
+        }
+        json = await fbRes.json();
+      } else {
+        return NextResponse.json(
+          { error: `Gemini API error: ${res.status}`, detail: await res.text() },
+          { status: 500 }
+        );
+      }
+    } else {
+      json = await res.json();
     }
 
-    const data = await geminiResponse.json();
-    const response = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, but I could not generate a response at this time.';
+    const output =
+      json?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") ||
+      json?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I couldn’t generate a response.";
 
-    return NextResponse.json({ response });
-
-  } catch (error) {
-    console.error('Chatbot API error:', error);
+    return NextResponse.json({ response: output });
+  } catch (err: any) {
     return NextResponse.json(
-      { error: 'Failed to process your request' },
+      { error: "Chatbot route failed", detail: String(err?.message || err) },
       { status: 500 }
     );
   }
