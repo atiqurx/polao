@@ -451,7 +451,9 @@ export default function Dashboard() {
         </div>
 
         <div className="mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900">{headerTitle}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {headerTitle}
+          </h1>
           <p className="text-sm text-gray-500">
             Events from the last 31 days • English • United States
           </p>
@@ -466,7 +468,7 @@ export default function Dashboard() {
           <>
             {/* Featured story */}
             {events[0] && (
-              <div className="group overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow">
+              <div className="group overflow-hidden bg-[#f7f6f2] shadow-sm transition-shadow hover:shadow">
                 <div className="md:flex">
                   <div className="md:w-2/3">
                     <img
@@ -486,7 +488,9 @@ export default function Dashboard() {
                       </div>
                       <h2 className="font-serif text-2xl font-semibold text-neutral-900">
                         <Link
-                          href={`/dashboard/events/${encodeURIComponent(events[0].uri)}`}
+                          href={`/dashboard/events/${encodeURIComponent(
+                            events[0].uri
+                          )}`}
                           className="group-hover:underline"
                         >
                           {headline(events[0])}
@@ -500,7 +504,9 @@ export default function Dashboard() {
                     </div>
                     <div className="mt-4 flex items-center gap-3">
                       <Link
-                        href={`/dashboard/events/${encodeURIComponent(events[0].uri)}`}
+                        href={`/dashboard/events/${encodeURIComponent(
+                          events[0].uri
+                        )}`}
                         className="text-blue-700 font-medium"
                       >
                         Read full coverage →
@@ -525,7 +531,7 @@ export default function Dashboard() {
               {events.slice(1).map((ev) => (
                 <article
                   key={ev.uri}
-                  className="group rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow"
+                  className="group bg-[#f7f6f2] p-5 shadow-sm transition-shadow hover:shadow"
                 >
                   <div className="flex items-start gap-4">
                     {ev.images?.[0] && (
@@ -541,7 +547,9 @@ export default function Dashboard() {
                       </div>
                       <h3 className="mt-1 font-serif text-xl font-semibold text-neutral-900">
                         <Link
-                          href={`/dashboard/events/${encodeURIComponent(ev.uri)}`}
+                          href={`/dashboard/events/${encodeURIComponent(
+                            ev.uri
+                          )}`}
                           className="hover:underline"
                         >
                           {headline(ev)}
@@ -615,7 +623,8 @@ export default function Dashboard() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs text-gray-500">
-                  {new Date(selected.eventDate).toLocaleString()} • {selected.uri}
+                  {new Date(selected.eventDate).toLocaleString()} •{" "}
+                  {selected.uri}
                 </div>
                 <h2 className="text-lg font-semibold">{headline(selected)}</h2>
                 {selected.summary?.eng && (
