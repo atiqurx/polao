@@ -1,8 +1,8 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import BiasDistribution from "@/components/BiasDistribution";
 
 /* ---------- Types ---------- */
 type EREvent = {
@@ -255,6 +255,8 @@ function Controls({
     return c;
   }, [labeled]);
 
+  const unrated = labeled.length - (counts.left + counts.center + counts.right);
+
   const view = useMemo(() => {
     const filtered = labeled.filter((a) => {
       if (tab === "all") return true;
@@ -282,6 +284,17 @@ function Controls({
           />
         </label>
       </div>
+
+      {labeled.length > 0 && (
+        <div className="mb-4">
+          <BiasDistribution
+            left={counts.left}
+            center={counts.center}
+            right={counts.right}
+            unrated={unrated}
+          />
+        </div>
+      )}
 
       <div className="flex items-center gap-2 mb-3">
         <Tab
