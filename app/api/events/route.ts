@@ -7,6 +7,33 @@ export const dynamic = "force-dynamic";
 const BASE = process.env.NEWS_API_AI_BASE ?? "https://eventregistry.org/api/v1";
 const API_KEY = process.env.NEWS_API_AI_KEY;
 
+const TOPIC_CONCEPTS: Record<string, string[]> = {
+  // omit concept filter for "latest"
+  latest: [],
+
+  politics: ["http://en.wikipedia.org/wiki/Politics"],
+  economy: ["http://en.wikipedia.org/wiki/Economy"],
+  finance: ["http://en.wikipedia.org/wiki/Finance"],
+  business: ["http://en.wikipedia.org/wiki/Business"],
+  technology: ["http://en.wikipedia.org/wiki/Technology"],
+  immigration: ["http://en.wikipedia.org/wiki/Immigration"],
+};
+
+function buildAndFilters(topicKey: string) {
+  const key = (topicKey || "latest").toLowerCase();
+  const concepts = TOPIC_CONCEPTS[key] ?? [];
+
+  const andFilters: any[] = [
+    { locationUri: "http://en.wikipedia.org/wiki/United_States" },
+    { lang: "eng" },
+  ];
+
+  // only add concept filters when we have them
+  for (const c of concepts) andFilters.push({ conceptUri: c });
+
+  return andFilters;
+}
+
 export async function GET(req: NextRequest) {
   if (!API_KEY) {
     return NextResponse.json(
@@ -18,16 +45,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const page = Number(searchParams.get("page") ?? "1");
   const count = Number(searchParams.get("count") ?? "20");
+  const category = (searchParams.get("category") ?? "latest").toLowerCase();
 
   const body = {
     query: {
-      $query: {
-        $and: [
-          { conceptUri: "http://en.wikipedia.org/wiki/Politics" },
-          { locationUri: "http://en.wikipedia.org/wiki/United_States" },
-          { lang: "eng" },
-        ],
-      },
+      $query: { $and: buildAndFilters(category) },
       $filter: { forceMaxDataTimeWindow: "31" },
     },
     resultType: "events",
@@ -72,5 +94,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // echo ER payload (has events.results/page/pages/etc.)
   return NextResponse.json(json);
 }

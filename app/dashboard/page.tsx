@@ -42,7 +42,7 @@ export default function Dashboard() {
   async function loadEvents(page = 1) {
     setLoadingEvents(true);
     try {
-      const res = await fetch(`/api/events?page=${page}&count=20`);
+      const res = await fetch(`/api/events?page=${page}&count=10`);
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "events failed");
       const list: EREvent[] = json?.events?.results ?? [];
