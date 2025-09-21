@@ -497,14 +497,23 @@ export default function Dashboard() {
                         </div>
                         <h2 className="font-serif text-2xl font-semibold text-neutral-900">
                           <Link
-                            href={`/dashboard/events/${encodeURIComponent(
-                              events[0].uri
-                            )}`}
+                            href={{
+                              pathname: `/dashboard/events/${encodeURIComponent(
+                                events[0].uri
+                              )}`,
+                              query: {
+                                title: headline(events[0]),
+                                summary: events[0].summary?.eng ?? "",
+                                date: events[0].eventDate ?? "",
+                                image: events[0].images?.[0] ?? "",
+                              },
+                            }}
                             className="group-hover:underline"
                           >
                             {headline(events[0])}
                           </Link>
                         </h2>
+
                         {events[0].summary?.eng && (
                           <p className="mt-2 leading-relaxed text-neutral-700 line-clamp-3">
                             {events[0].summary.eng}
@@ -513,19 +522,28 @@ export default function Dashboard() {
                       </div>
                       <div className="mt-4 flex items-center gap-3">
                         <Link
-                          href={`/dashboard/events/${encodeURIComponent(
-                            events[0].uri
-                          )}`}
+                          href={{
+                            pathname: `/dashboard/events/${encodeURIComponent(
+                              events[0].uri
+                            )}`,
+                            query: {
+                              title: headline(events[0]),
+                              summary: events[0].summary?.eng ?? "",
+                              date: events[0].eventDate ?? "",
+                              image: events[0].images?.[0] ?? "",
+                            },
+                          }}
                           className="text-blue-700 font-medium"
                         >
                           Read full coverage →
                         </Link>
-                        <button
+
+                        {/* <button
                           onClick={() => openEvent(events[0]!)}
                           className="rounded border px-2 py-1 text-sm hover:bg-neutral-50"
                         >
                           Quick view
-                        </button>
+                        </button> */}
                       </div>
                     </div>
                   </div>
@@ -556,14 +574,23 @@ export default function Dashboard() {
                         </div>
                         <h3 className="mt-1 font-serif text-xl font-semibold text-neutral-900">
                           <Link
-                            href={`/dashboard/events/${encodeURIComponent(
-                              ev.uri
-                            )}`}
+                            href={{
+                              pathname: `/dashboard/events/${encodeURIComponent(
+                                ev.uri
+                              )}`,
+                              query: {
+                                title: headline(ev),
+                                summary: ev.summary?.eng ?? "",
+                                date: ev.eventDate ?? "",
+                                image: ev.images?.[0] ?? "",
+                              },
+                            }}
                             className="hover:underline"
                           >
                             {headline(ev)}
                           </Link>
                         </h3>
+
                         {ev.summary?.eng && (
                           <p className="mt-2 line-clamp-3 text-sm text-neutral-700">
                             {ev.summary.eng}
@@ -571,14 +598,14 @@ export default function Dashboard() {
                         )}
                         <div className="mt-3 flex items-center gap-3">
                           <span className="text-xs text-neutral-500">
-                            {ev.totalArticleCount ?? 0} articles
+                            Sources: {ev.totalArticleCount ?? 0} articles
                           </span>
-                          <button
+                          {/* <button
                             onClick={() => openEvent(ev)}
                             className="rounded border px-2 py-1 text-xs hover:bg-neutral-50"
                           >
                             Quick view
-                          </button>
+                          </button> */}
                         </div>
                       </div>
                     </div>

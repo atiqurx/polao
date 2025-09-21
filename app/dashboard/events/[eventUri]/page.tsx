@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import BiasDistribution from "@/components/BiasDistribution";
 
 /* ---------- Types ---------- */
@@ -98,9 +98,15 @@ function ArticleList({
                 </a>
                 <BiasBadge label={(a.__bias as BiasLabel) || "Unknown"} />
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {a.source?.title || domainFromUrl(a.url)} •{" "}
-                {a.dateTimePub ? new Date(a.dateTimePub).toLocaleString() : ""}
+              <div className="text-xs mt-1 text-black/70">
+                <span className="font-semibold text-sm">
+                  {a.source?.title || domainFromUrl(a.url)} •{" "}
+                </span>
+                <span className="text-gray-500 ">
+                  {a.dateTimePub
+                    ? new Date(a.dateTimePub).toLocaleString()
+                    : ""}
+                </span>
               </div>
             </div>
           </div>
@@ -292,6 +298,45 @@ function Controls({
     </div>
   );
 }
+function truncateToSentence(text: string, approx = 800) {
+  if (!text) return "";
+
+  // Work with a normalized copy for measuring; keep original for display
+  const normalized = text.replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= approx) {
+    // if it already ends with ".", keep it; otherwise add "...."
+    if (/\.$/.test(normalized)) return normalized;
+    return normalized
+      .replace(/[!?…]+$/, "....")
+      .replace(/[^.]$/, "$&" + "....");
+  }
+
+  // Split into sentences at ., !, ? followed by space
+  const sentences = normalized.split(/(?<=[.!?])\s+/);
+  let out = "";
+
+  for (const s of sentences) {
+    const next = out ? `${out} ${s}` : s;
+    if (next.length > approx) break;
+    out = next;
+  }
+
+  // If no complete sentence fit, cut at last period before approx
+  if (!out) {
+    const pre = normalized.slice(0, approx);
+    const lastDot = pre.lastIndexOf(".");
+    out = lastDot > 0 ? normalized.slice(0, lastDot + 1) : pre;
+  }
+
+  // End punctuation handling:
+  // - if already ends with ".", keep it
+  // - if ends with ! ? … or no terminal punctuation, add "...."
+  out = out.trim();
+  if (/\.$/.test(out)) return out;
+  if (/[!?…]+$/.test(out)) return out.replace(/[!?…]+$/, "....");
+  return /[.!?…]$/.test(out) ? out : out + "....";
+}
 
 /* ---------- Page ---------- */
 export default function EventPage() {
@@ -300,6 +345,13 @@ export default function EventPage() {
   const eventUri = decodeURIComponent(
     Array.isArray(rawParam) ? rawParam[0] : rawParam || ""
   );
+
+  // seed from URL
+  const searchParams = useSearchParams();
+  const initialTitle = searchParams.get("title") || undefined;
+  const initialSummary = searchParams.get("summary") || undefined;
+  const initialDate = searchParams.get("date") || undefined;
+  const initialImage = searchParams.get("image") || undefined;
 
   const [articles, setArticles] = useState<ERArticle[]>([]);
   const [loading, setLoading] = useState(false);
@@ -310,14 +362,30 @@ export default function EventPage() {
     date?: string;
   }>({});
 
+  // reset immediately when event changes (prevents flash)
+  useEffect(() => {
+    setEventMeta({
+      title: initialTitle,
+      summary: initialSummary,
+      image: initialImage,
+      date: initialDate,
+    });
+    setEventMeta({});
+    setArticles([]);
+  }, [eventUri, initialTitle, initialSummary, initialImage, initialDate]);
+
+  // fetch + race guard + preserve values
   useEffect(() => {
     if (!eventUri) return;
+    const ctrl = new AbortController();
+    const current = eventUri;
+
     (async () => {
       setLoading(true);
       try {
         const res = await fetch(
           `/api/event-articles?eventUri=${encodeURIComponent(eventUri)}&page=1`,
-          { cache: "no-store" }
+          { cache: "no-store", signal: ctrl.signal }
         );
         const json = await res.json();
 
@@ -326,42 +394,62 @@ export default function EventPage() {
           json?.erRaw?.[eventUri]?.articles?.results ??
           json?.erRaw?.articles?.results ??
           [];
-        setArticles(list);
 
-        const nodeA = json?.erRaw?.[eventUri] ?? json?.erRaw ?? {};
-        const maybeTitle =
-          nodeA?.event?.title?.eng ||
-          nodeA?.info?.title?.eng ||
+        const node = json?.erRaw?.[eventUri] ?? json?.erRaw ?? {};
+
+        const title =
+          node?.event?.title?.eng ||
+          node?.info?.title?.eng ||
           list?.[0]?.title ||
-          undefined;
-        const maybeSummary =
-          nodeA?.event?.summary?.eng || nodeA?.info?.summary?.eng || undefined;
-        const maybeImg = nodeA?.event?.image || list?.[0]?.image || undefined;
-        const maybeDate =
-          nodeA?.event?.date ||
-          nodeA?.info?.eventDate ||
-          list?.[0]?.dateTimePub ||
-          undefined;
+          initialTitle ||
+          eventMeta.title;
 
-        setEventMeta({
-          title: maybeTitle,
-          summary: maybeSummary,
-          image: maybeImg,
-          date: maybeDate,
-        });
-      } catch (err) {
-        console.error(err);
-        setArticles([]);
+        const summary =
+          node?.event?.summary?.eng ||
+          node?.info?.summary?.eng ||
+          initialSummary ||
+          eventMeta.summary;
+
+        const image =
+          node?.event?.image ||
+          list?.[0]?.image ||
+          initialImage ||
+          eventMeta.image;
+
+        const date =
+          node?.event?.date ||
+          node?.info?.eventDate ||
+          list?.[0]?.dateTimePub ||
+          initialDate ||
+          eventMeta.date;
+
+        if (!ctrl.signal.aborted && current === eventUri) {
+          setArticles(list);
+          setEventMeta({ title, summary, image, date });
+        }
+      } catch (e) {
+        if (!ctrl.signal.aborted) {
+          console.error(e);
+          setArticles([]);
+        }
       } finally {
-        setLoading(false);
+        if (!ctrl.signal.aborted) setLoading(false);
       }
     })();
-  }, [eventUri]);
+
+    return () => ctrl.abort();
+  }, [eventUri]); // keep deps minimal
 
   const pageTitle = useMemo(
-    () => eventMeta.title || `Event: ${eventUri}`,
+    () => eventMeta.title || ``,
     [eventMeta.title, eventUri]
   );
+  // TEMP DEBUG — remove later
+  const debugParams = useMemo(
+    () => Object.fromEntries(Array.from(searchParams.entries())),
+    [searchParams]
+  );
+  console.log("Event debug:", { eventUri, debugParams, eventMeta });
 
   return (
     <div className="mx-auto max-w-5xl p-6">
@@ -378,7 +466,7 @@ export default function EventPage() {
       </div>
 
       {/* Hero (uncropped image) */}
-      {(eventMeta.summary || eventMeta.image) && (
+      {eventMeta.image && (
         <div className="mb-8 overflow-hidden bg-[#f7f6f2]">
           {eventMeta.image && (
             <div className="flex items-center justify-center bg-neutral-100">
@@ -389,17 +477,22 @@ export default function EventPage() {
               />
             </div>
           )}
-          {eventMeta.summary && (
-            <p className="p-6 font-serif text-lg leading-relaxed text-neutral-800">
-              {eventMeta.summary}
-            </p>
-          )}
         </div>
+      )}
+      {eventMeta.summary && (
+        <section className="mb-8">
+          <h2 className="font-serif text-2xl font-semibold text-neutral-900 mb-2">
+            Summary
+          </h2>
+          <p className="p-6 text-lg leading-relaxed text-neutral-800 whitespace-pre-line">
+            {truncateToSentence(eventMeta.summary, 800)}
+          </p>
+        </section>
       )}
 
       {/* Bias analysis + articles */}
       <section>
-        <h2 className="mb-4 font-serif text-2xl font-semibold text-neutral-900">
+        <h2 className="mt-4 mb-4 font-serif text-2xl font-semibold text-neutral-900">
           Full Coverage (with bias breakdown)
         </h2>
 
